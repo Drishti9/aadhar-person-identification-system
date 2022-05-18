@@ -15,6 +15,8 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 import json
 from django.contrib.auth import authenticate
 
+from .permissions import *
+
 # Create your views here.
 
 def get_tokens_for_user(user):
@@ -31,12 +33,12 @@ def login_view(request):
 
     #POST API for login
     data = json.loads(request.body)
-    email = data.get('email')
+    username = data.get('username')
     password = data.get('password')
-    if email is None:
+    if username is None:
         return JsonResponse({
             "errors": {
-                "detail": "Please enter email"
+                "detail": "Please enter username"
             }
         }, status=400)
     elif password is None:
@@ -47,7 +49,7 @@ def login_view(request):
         }, status=400)
 
     # authentication user
-    user = authenticate(email=email, password=password)
+    user = authenticate(username=username, password=password)
     if user is not None:
         #login(request, user)
         #return JsonResponse({"success": "User has been logged in"})
@@ -60,11 +62,26 @@ def login_view(request):
         status=400,
     )
 
+class RegisterView(generics.GenericAPIView):
+    permission_classes=[AllowAny]
+    serializer_class = UserSerializer
+    http_methods=['post']
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response({
+            "user": UserSerializer(user, context=self.get_serializer_context()).data,
+            "message": "User Created Successfully.  Now perform Login to get your token",
+        })
+
 class AadharViewSet(generics.GenericAPIView):
     http_methods=['get', 'post',]
 
     serializer_class = AadharSerializer
     queryset = Aadhar.objects.all()
+    permission_classes=[AllowPermission,]
 
     def get(self, request):
         accounts = Aadhar.objects.all()
@@ -84,6 +101,7 @@ class RetrieveAadharView(generics.RetrieveAPIView):
 
     serializer_class = AadharSerializer
     queryset = Aadhar.objects.all()
+    permission_classes=[AllowPermission,]
 
     def patch(self, request, pk):
         account=Aadhar.objects.get(aadhar_num=pk)
@@ -100,6 +118,7 @@ class RetrieveAadharView(generics.RetrieveAPIView):
 
 class InactiveAadharView(generics.ListAPIView):
     http_methods=['get']
+    permission_classes=[AllowPermission,]
 
     serializer_class = AadharSerializer
     queryset = Aadhar.objects.filter(is_active=False)
@@ -108,6 +127,7 @@ class AddressAccountViewSet(generics.RetrieveAPIView):
 
     serializer_class = AddressSerializer
     queryset = Address.objects.all()
+    permission_classes=[AllowPermission,]
 
     def get(self, request, pk):
         account=Aadhar.objects.get(aadhar_num=pk)
@@ -119,6 +139,7 @@ class AddressViewSet(generics.GenericAPIView):
 
     serializer_class = AddressSerializer
     queryset = Address.objects.all()
+    permission_classes=[AllowPermission,]
 
     def get(self, request):
         address_queryset = Address.objects.all()
@@ -136,6 +157,7 @@ class QualificationAccountViewSet(generics.RetrieveAPIView):
 
     serializer_class = QualificationSerializer
     queryset = Qualification.objects.all()
+    permission_classes=[AllowPermission]
 
     def get(self, request, pk):
         account=Aadhar.objects.get(aadhar_num=pk)
@@ -147,6 +169,7 @@ class QualificationViewSet(generics.GenericAPIView):
 
     serializer_class = QualificationSerializer
     queryset = Qualification.objects.all()
+    permission_classes=[AllowPermission]
 
     def get(self, request):
         queryset = Qualification.objects.all()
@@ -164,6 +187,7 @@ class QualificationViewSet(generics.GenericAPIView):
 class BankLinkedAccountViewSet(generics.GenericAPIView):
     serializer_class = BankSerializer
     queryset = Bank.objects.all()
+    permission_classes=[AllowPermission]
 
     def get(self, request, pk):
         account=Aadhar.objects.get(aadhar_num=pk)
@@ -177,6 +201,7 @@ class BankLinkedAccountViewSet(generics.GenericAPIView):
 class BankViewSet(generics.GenericAPIView):
     serializer_class = BankSerializer
     queryset = Bank.objects.all()
+    permission_classes=[AllowPermission]
 
     def get(self, request):
         queryset = Bank.objects.all()
@@ -195,6 +220,7 @@ class JobExperienceAccountViewSet(generics.RetrieveAPIView):
 
     serializer_class = JobExperienceSerializer
     queryset = JobExperience.objects.all()
+    permission_classes=[AllowPermission]
 
     def get(self, request, pk):
         account=Aadhar.objects.get(aadhar_num=pk)
@@ -206,6 +232,7 @@ class JobExperienceViewSet(generics.GenericAPIView):
 
     serializer_class = JobExperienceSerializer
     queryset = JobExperience.objects.all()
+    permission_classes=[AllowPermission]
 
     def get(self, request):
         queryset = JobExperience.objects.all()
@@ -221,6 +248,7 @@ class JobExperienceViewSet(generics.GenericAPIView):
 class PersonalDetailsAccountViewSet(generics.GenericAPIView):
     serializer_class=PersonalDetailsSerializer
     queryset=PersonalDetails.objects.all()
+    permission_classes=[AllowPermission]
 
     def get(self, request, pk):
         account=Aadhar.objects.get(aadhar_num=pk)
@@ -229,14 +257,6 @@ class PersonalDetailsAccountViewSet(generics.GenericAPIView):
 
         email_queryset=details.get_emails()
         contacts_queryset=details.get_contacts()
-
-        emails_serializer=EmailSerializer(email_queryset, many=True)
-        contacts_serialized=ContactSerializer(contacts_queryset, many=True)
-
-        # print(serializer.data)
-        # print(emails_serializer.data)
-        # print(contacts_serialized.data)
-        # print(email_queryset)
 
         emails=[]
         contacts=[]
@@ -258,6 +278,8 @@ class PersonalDetailsAccountViewSet(generics.GenericAPIView):
         return Response(x)
 
 class PersonalDetailsViewSet(generics.GenericAPIView):
+    permission_classes=[AllowPermission]
+
     serializer_class = PersonalDetailsSerializer
     # serializer_class_email=EmailSerializer
     # serializer_class_contact=ContactSerializer
@@ -279,5 +301,5 @@ class PersonalDetailsViewSet(generics.GenericAPIView):
             for each in contacts:
                 Contact.objects.create(person=details, contact=each)
 
-            return Response(serializer.data, status=HTTP_200_OK)
+            return Response(status=HTTP_200_OK, data="Personal Details successfully added")
         return Response(data="Bad request: Details already exist for user", status=HTTP_400_BAD_REQUEST)

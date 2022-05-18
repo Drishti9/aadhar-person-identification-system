@@ -5,14 +5,19 @@ from django.core.validators import MinLengthValidator, MaxLengthValidator, MinVa
 from django.utils.translation import gettext_lazy as _
 from sympy import true
 from datetime import date
-# from django.contrib.auth.models import AbstractBaseUser, AbstractUser
-# from django.contrib.auth.models import PermissionsMixin
+from django.contrib.auth.models import AbstractUser, AbstractBaseUser
+from django.contrib.auth.models import PermissionsMixin
+from .managers import *
 
 # Create your models here.
 
+class User(AbstractUser, PermissionsMixin):
+    is_manager = models.BooleanField(_("manager status"), default=False)
+
+    #objects = UserManager()
+
 class Aadhar(models.Model):
     aadhar_num=models.CharField(validators=[MaxLengthValidator(12), MinLengthValidator(12)], primary_key="True", max_length=12)
-    #aadhar_num=models.RegexField(regex=r'^d{12}$', error_message=("Aadhar number should be 12 digits only"))
     is_active=models.BooleanField(default=True)
 
     def __str__(self) -> str:
@@ -23,14 +28,13 @@ class Address(models.Model):
     street=models.CharField(max_length=50, blank=True)
     city=models.CharField(max_length=30, blank=True)
     state=models.CharField(max_length=30, blank=True)
-    #postal_code=models.PositiveIntegerField(validators=[MaxLengthValidator(6),MinLengthValidator(6)], blank=True)
     postal_code=models.CharField(validators=[MaxLengthValidator(6), MinLengthValidator(6)], max_length=6)
 
 class Qualification(models.Model):
     person=models.ForeignKey(Aadhar, on_delete=models.CASCADE)
     institute=models.CharField(max_length=100, blank=True)
     percentage=models.FloatField(validators=[MinValueValidator(0.0), MaxValueValidator(100.0)], blank=True)
-    year=models.PositiveSmallIntegerField(blank=True)
+    year=models.PositiveSmallIntegerField(validators=[MaxValueValidator(date.today().year), MinValueValidator(1950)], blank=True)
 
 class Bank(models.Model):
     person=models.ForeignKey(Aadhar, on_delete=models.CASCADE)
@@ -58,10 +62,8 @@ class PersonalDetails(models.Model):
 
     def get_emails(self):
         return self.email_set.all()
-        #.values_list('value', flat=True)
 
     def get_contacts(self):
-        #return self.contact_set.values_list('value', flat=True)
         return self.contact_set.all()
 
 class Email(models.Model):
@@ -70,7 +72,6 @@ class Email(models.Model):
 
 class Contact(models.Model):
     person=models.ForeignKey(PersonalDetails, on_delete=models.CASCADE)
-    #contact=models.RegexField(regex=r'^d{10}$', error_message=("Contact number should be 10 digits only"))
     contact=models.CharField(validators=[MaxLengthValidator(10), MinLengthValidator(10)], blank=True, max_length=10)
 
     def __str__(self) -> str:
@@ -80,7 +81,7 @@ class JobExperience(models.Model):
     person=models.ForeignKey(Aadhar, on_delete=models.CASCADE)
     company=models.CharField(max_length=50, blank=True)
     job_role=models.CharField(max_length=30, blank=True)
-    year=models.PositiveSmallIntegerField(validators=[MaxValueValidator(date.today().year), MinValueValidator(1950)], blank=True)
+    year=models.PositiveSmallIntegerField(blank=True)
 
     def __str__(self) -> str:
         return str(self.company)
