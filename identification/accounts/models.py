@@ -57,7 +57,7 @@ class PersonalDetails(models.Model):
     person=models.OneToOneField(Aadhar, on_delete=models.CASCADE)
     first_name = models.CharField( max_length=40, blank=True)
     last_name = models.CharField(max_length=40, blank=True)
-    dob=models.DateField()
+    dob=models.DateField(null=True)
     b_group=models.CharField(choices=b_group_type, max_length=3)
 
     def get_emails(self):

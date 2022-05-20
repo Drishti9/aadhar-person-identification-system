@@ -72,7 +72,7 @@ class RegisterView(generics.GenericAPIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         return Response({
-            "user": UserSerializer(user, context=self.get_serializer_context()).data,
+            #"user": UserSerializer(user, context=self.get_serializer_context()).data,
             "message": "User Created Successfully.  Now perform Login to get your token",
         })
 
@@ -115,13 +115,20 @@ class RetrieveAadharView(generics.RetrieveAPIView):
     #     account=Aadhar.objects.get(aadhar_num=pk)
     #     serializer=AadharSerializer(account)
     #     return Response(serializer.data)
+    def delete(self, request, pk):
+        account=Aadhar.objects.filter(aadhar_num=pk).first()
+        if account:
+            account.delete()
+            return Response(data="Deletion Successful")
+        return Response(data="Aadhar does not exist")
 
 class InactiveAadharView(generics.ListAPIView):
-    http_methods=['get']
+    http_methods=['get',]
     permission_classes=[AllowPermission,]
 
     serializer_class = AadharSerializer
     queryset = Aadhar.objects.filter(is_active=False)
+
 
 class AddressAccountViewSet(generics.RetrieveAPIView):
 
@@ -134,6 +141,17 @@ class AddressAccountViewSet(generics.RetrieveAPIView):
         address_queryset=Address.objects.filter(person=account)
         serializer=AddressSerializer(address_queryset, many=True)
         return Response(serializer.data)
+
+    def delete(self, request, pk):
+        account=Aadhar.objects.filter(aadhar_num=pk).first()
+        if account:
+            queryset=Address.objects.filter(person=account)
+            if queryset:
+                for obj in queryset:
+                    obj.delete()
+                return Response(data="Deletion successful")
+            return Response(data="Data does not exist")
+        return Response(data="Aadhar does not exist")
 
 class AddressViewSet(generics.GenericAPIView):
 
@@ -160,10 +178,24 @@ class QualificationAccountViewSet(generics.RetrieveAPIView):
     permission_classes=[AllowPermission]
 
     def get(self, request, pk):
-        account=Aadhar.objects.get(aadhar_num=pk)
-        queryset=Qualification.objects.filter(person=account)
-        serializer=QualificationSerializer(queryset, many=True)
-        return Response(serializer.data)
+        account=Aadhar.objects.filter(aadhar_num=pk).first()
+        if account:
+            queryset=Qualification.objects.filter(person=account)
+            serializer=QualificationSerializer(queryset, many=True)
+            return Response(serializer.data)
+        return Response(data="Aadhar does not exist")
+
+    def delete(self, request, pk):
+        account=Aadhar.objects.filter(aadhar_num=pk).first()
+        if account:
+            queryset=Qualification.objects.filter(person=account)
+            if queryset:
+                for obj in queryset:
+                    obj.delete()
+                return Response(data="Deletion successful")
+            return Response(data="Data does not exist")
+        return Response(data="Aadhar does not exist")
+
 
 class QualificationViewSet(generics.GenericAPIView):
 
@@ -190,13 +222,26 @@ class BankLinkedAccountViewSet(generics.GenericAPIView):
     permission_classes=[AllowPermission]
 
     def get(self, request, pk):
-        account=Aadhar.objects.get(aadhar_num=pk)
-        queryset=Bank.objects.filter(person=account)
-        serializer=BankSerializer(queryset, many=True)
+        account=Aadhar.objects.filter(aadhar_num=pk).first()
+        if account:
+            queryset=Bank.objects.filter(person=account)
+            if queryset:
+                serializer=BankSerializer(queryset, many=True)
+                return Response(serializer.data)
+            return Response(data="Details do not Exist")
+        return Response(data="Aadhar does not exist")
 
-        print(serializer.data, type(serializer.data))
+    def delete(self, request, pk):
+        account=Aadhar.objects.filter(aadhar_num=pk).first()
+        if account:
+            queryset=Bank.objects.filter(person=account)
+            if queryset:
+                for obj in queryset:
+                    obj.delete()
+                return Response(data="Deletion successful")
+            return Response(data="Data does not exist")
+        return Response(data="Aadhar does not exist")
 
-        return Response(serializer.data)
 
 class BankViewSet(generics.GenericAPIView):
     serializer_class = BankSerializer
@@ -216,6 +261,7 @@ class BankViewSet(generics.GenericAPIView):
             return Response(serializer.data, status=HTTP_200_OK)
         return Response(status=HTTP_400_BAD_REQUEST, data="Bad request: Incorrect Parameters")
 
+
 class JobExperienceAccountViewSet(generics.RetrieveAPIView):
 
     serializer_class = JobExperienceSerializer
@@ -223,10 +269,23 @@ class JobExperienceAccountViewSet(generics.RetrieveAPIView):
     permission_classes=[AllowPermission]
 
     def get(self, request, pk):
+        account=Aadhar.objects.filter(aadhar_num=pk).first()
+        if account:
+            queryset=JobExperience.objects.filter(person=account)
+            if queryset:
+                serializer=JobExperienceSerializer(queryset, many=True)
+                return Response(serializer.data)
+            return Response(data="Data does not exist")
+        return Response(data="Aadhar no. does not exist")
+
+    def delete(self, request, pk):
         account=Aadhar.objects.get(aadhar_num=pk)
         queryset=JobExperience.objects.filter(person=account)
-        serializer=JobExperienceSerializer(queryset, many=True)
-        return Response(serializer.data)
+        if queryset:
+            for obj in queryset:
+                obj.delete()
+            return Response(data="Deletion successful")
+        return Response(data="Data does not exist")
 
 class JobExperienceViewSet(generics.GenericAPIView):
 
@@ -251,31 +310,39 @@ class PersonalDetailsAccountViewSet(generics.GenericAPIView):
     permission_classes=[AllowPermission]
 
     def get(self, request, pk):
-        account=Aadhar.objects.get(aadhar_num=pk)
-        details=PersonalDetails.objects.filter(person=account).first()
-        serializer=PersonalDetailsSerializer(details, many=False)
 
-        email_queryset=details.get_emails()
-        contacts_queryset=details.get_contacts()
+        account=Aadhar.objects.filter(aadhar_num=pk).first()
+        if account:
+            details=PersonalDetails.objects.filter(person=account).first()
+            if details:
+                serializer=PersonalDetailsSerializer(details, many=False)
 
-        emails=[]
-        contacts=[]
-        for each in email_queryset:
-            emails.append(each.email)
-            print(each.email)
-        for each in contacts_queryset:
-            contacts.append(each.contact)
+                email_queryset=details.get_emails()
+                contacts_queryset=details.get_contacts()
 
-        print(emails, contacts)
+                emails=[]
+                contacts=[]
+                for each in email_queryset:
+                    emails.append(each.email)
+                for each in contacts_queryset:
+                    contacts.append(each.contact)
 
-        x=serializer.data
 
-        x['email']=emails
-        x['contact']=contacts
+                x=serializer.data
 
-        print(x)
+                x['email']=emails
+                x['contact']=contacts
 
-        return Response(x)
+                return Response(x)
+            return Response(data="Data does not exist")
+        return Response(data="Aadhar no. does not exist")
+
+    def delete(self, request, pk):
+        obj=PersonalDetails.objects.filter(person=pk).first()
+        if obj:
+            obj.delete()
+            return Response(data="Deletion successful")
+        return Response(data="Data does not exist")
 
 class PersonalDetailsViewSet(generics.GenericAPIView):
     permission_classes=[AllowPermission]
@@ -288,8 +355,11 @@ class PersonalDetailsViewSet(generics.GenericAPIView):
     def post(self, request):
         account=Aadhar.objects.get(aadhar_num=request.data['person'])
         if not PersonalDetails.objects.filter(person=account).first():
-            emails=request.data.pop('email')
-            contacts=request.data.pop('contact')
+            try:
+                emails=request.data.pop('email')
+                contacts=request.data.pop('contact')
+            except KeyError:
+                return Response(status=HTTP_200_OK, data="Email and contact details are required")
 
             serializer=self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
@@ -303,3 +373,39 @@ class PersonalDetailsViewSet(generics.GenericAPIView):
 
             return Response(status=HTTP_200_OK, data="Personal Details successfully added")
         return Response(data="Bad request: Details already exist for user", status=HTTP_400_BAD_REQUEST)
+
+    def patch(self, request):
+        account=Aadhar.objects.get(aadhar_num=request.data['person'])
+        object=PersonalDetails.objects.filter(person=account).first()
+        if not object:
+            return Response(data="Bad request: Details do not exist", status=HTTP_400_BAD_REQUEST)
+
+        emails=None
+        try:
+            emails=request.data.pop('email')
+        except KeyError:
+            pass
+
+        print(emails)
+
+        contacts=None
+        try:
+            contacts=request.data.pop('contact')
+        except KeyError:
+            pass
+
+        serializer=self.get_serializer(object, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        details=serializer.save()
+
+        if emails:
+            for each in emails:
+                if not Email.objects.filter(person=details, email=each).first():
+                    Email.objects.create(person=details, email=each)
+
+        if contacts:
+            for each in contacts:
+                if not Contact.objects.filter(person=details, conatct=each).first():
+                    Contact.objects.create(person=details, contact=each)
+
+        return Response(status=HTTP_200_OK, data="Personal Details successfully added")
